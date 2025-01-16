@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #a62f26;
+            background: linear-gradient(140deg, #a63830 20%, rgba(255,255,255,1) 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #fff;
+            margin: 20px 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            color: #555;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0 0 20px;
+        }
+
+        form {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #f24d1b;
+            border-radius: 5px;
+            width: calc(100% - 20px);
+            max-width: 250px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            background: #f24d1b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #e36d4a;
+        }
+
+        #Index {
+            margin-top: 20px;
+        }
+
+        .actions button {
+            margin: 5px;
+            padding: 8px 12px;
+        }
+
+        .actions button:first-child {
+            background: #dc3545;
+        }
+
+        .actions button:first-child:hover {
+            background: #a71d2a;
+        }
+
+        .actions button:last-child {
+            background: #28a745;
+        }
+
+        .actions button:last-child:hover {
+            background: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Array Data</h1>
+    <div class="container">
+        <h2 id="data">Loading data...</h2>
+
+        <form id="dataForm">
+            <input type="text" id="itemInput" placeholder="Enter an item" required>
+            <button type="submit">Add Item</button>
+        </form>
+
+        <form id="searchForm">
+            <input type="text" id="searchInput" placeholder="Enter an item to search" required>
+            <button type="submit">Search Item</button>
+        </form>
+
+        <div id="Index"></div>
+    </div>
+
+    <script>
+        let currentIndex = null;
+
+        // Fetch and display initial data
+        fetch('http://localhost:8001/data')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('data').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                document.getElementById('data').textContent = 'Error fetching data.';
+            });
+
+        // Add new item
+        document.getElementById('dataForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const item = parseInt(document.getElementById('itemInput').value, 10);
+
+            try {
+                const response = await fetch('http://localhost:8001/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ item }),
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                location.reload();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while posting data.');
+            }
+        });
+
+        // Search for an item
+        document.getElementById('searchForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const item = parseInt(document.getElementById('searchInput').value, 10);
+
+            try {
+                const response = await fetch('http://localhost:8001/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ item }),
+                });
+
+                const result = await response.json();
+                if (result.index !== -1) {
+                    currentIndex = result.index;
+                    document.getElementById("Index").innerHTML = `
+                        <p>${result.message} at index: ${result.index}</p>
+                        <div class="actions">
+                            <button id="deleteButton">Delete</button>
+                            <button id="updateButton">Update</button>
+                        </div>
+                    `;
+
+                    document.getElementById("deleteButton").addEventListener("click", async () => {
+                        await fetch(`http://localhost:8001/delete/${currentIndex}`, { method: 'DELETE' });
+                        alert('Item deleted successfully.');
+                        location.reload();
+                    });
+
+                    document.getElementById("updateButton").addEventListener("click", async () => {
+                        const newItem = prompt("Enter the new value:");
+                        if (newItem) {
+                            await fetch(`http://localhost:8001/update/${currentIndex}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ item: parseInt(newItem, 10) }),
+                            });
+                            alert('Item updated successfully.');
+                            location.reload();
+                        }
+                    });
+                } else {
+                    document.getElementById("Index").innerHTML = result.message;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while searching.');
+            }
+        });
+    </script>
+</body>
+</html>
