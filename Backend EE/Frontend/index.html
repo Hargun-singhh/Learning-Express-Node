@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <p>Name:</p>
+    <input type="text" id="nameFromForm">
+    <p>Age:</p>
+    <input type="text" id="ageFromForm">
+    <button id="btn">SUBMIT</button>
+
+    <script>
+        const button = document.querySelector("#btn")
+btn.addEventListener("click",function(){
+            const name = document.querySelector("#nameFromForm").value;
+            const age = document.querySelector("#ageFromForm").value;
+           const  data = {
+            name:name,
+            age:age
+           }
+
+           console.log(typeof(data),data);
+        });
+
+
+        
+        
+    </script>
+</body>
+</html>
